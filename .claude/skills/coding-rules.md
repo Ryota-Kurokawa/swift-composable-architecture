@@ -1,46 +1,46 @@
-# TCA Coding Rules & Best Practices
+# TCA コーディングルール & ベストプラクティス
 
-> **Version**: 1.18+ (Latest)
-> **Last Updated**: 2025-02
-> **Swift Version**: 6.0+ with strict concurrency
+> **バージョン**: 1.18+ (最新)
+> **最終更新**: 2025-02
+> **Swift バージョン**: 6.0+ with strict concurrency
 
-## Table of Contents
+## 目次
 
-1. [File Organization](#file-organization)
-2. [Naming Conventions](#naming-conventions)
-3. [State Design](#state-design)
-4. [Action Design](#action-design)
-5. [Reducer Implementation](#reducer-implementation)
-6. [Effect Guidelines](#effect-guidelines)
-7. [Dependency Management](#dependency-management)
-8. [Testing Requirements](#testing-requirements)
-9. [SwiftUI Integration](#swiftui-integration)
-10. [Code Style](#code-style)
+1. [ファイル構成](#ファイル構成)
+2. [命名規則](#命名規則)
+3. [State設計](#state設計)
+4. [Action設計](#action設計)
+5. [Reducer実装](#reducer実装)
+6. [Effectガイドライン](#effectガイドライン)
+7. [依存性管理](#依存性管理)
+8. [テスト要件](#テスト要件)
+9. [SwiftUI統合](#swiftui統合)
+10. [コードスタイル](#コードスタイル)
 
 ---
 
-## File Organization
+## ファイル構成
 
-### Feature Module Structure
+### 機能モジュール構造
 
 ```
 FeatureModule/
-├── Feature.swift              # Main reducer
-├── FeatureView.swift         # SwiftUI view
+├── Feature.swift              # メインのReducer
+├── FeatureView.swift         # SwiftUI View
 ├── Models/
-│   ├── FeatureModels.swift   # Domain models
+│   ├── FeatureModels.swift   # ドメインモデル
 │   └── ...
 ├── Dependencies/
-│   ├── APIClient.swift       # Feature dependencies
+│   ├── APIClient.swift       # 機能の依存性
 │   └── ...
 └── Tests/
     ├── FeatureTests.swift
     └── ...
 ```
 
-### Single File Structure
+### 単一ファイル構造
 
-For simple features, use single-file structure:
+シンプルな機能には単一ファイル構造を使用:
 
 ```swift
 import ComposableArchitecture
@@ -100,24 +100,24 @@ struct FeatureView: View {
 
 ---
 
-## Naming Conventions
+## 命名規則
 
-### Reducer Naming
+### Reducerの命名
 
 ```swift
-✅ // Feature-based names
+✅ // 機能ベースの名前
 @Reducer struct LoginFeature { }
 @Reducer struct ProfileFeature { }
 @Reducer struct SettingsFeature { }
 
-❌ // Avoid "Reducer" suffix
-@Reducer struct LoginReducer { }  // Redundant
+❌ // "Reducer" サフィックスを避ける
+@Reducer struct LoginReducer { }  // 冗長
 ```
 
-### State Naming
+### Stateの命名
 
 ```swift
-✅ // Always nested in reducer
+✅ // 常にReducer内にネスト
 @Reducer
 struct Feature {
   @ObservableState
@@ -126,14 +126,14 @@ struct Feature {
   }
 }
 
-❌ // Don't define State separately
-struct FeatureState: Equatable { }  // Breaks scoping
+❌ // State を別に定義しない
+struct FeatureState: Equatable { }  // スコープが壊れる
 ```
 
-### Action Naming
+### Actionの命名
 
 ```swift
-✅ // Clear, past-tense for events
+✅ // 明確で、過去形のイベント名
 enum Action {
   case loginButtonTapped
   case usernameFocused
@@ -141,103 +141,103 @@ enum Action {
   case delegate(DelegateAction)
 }
 
-❌ // Avoid imperative/ambiguous names
+❌ // 命令形/曖昧な名前を避ける
 enum Action {
-  case login          // Unclear
-  case tapLoginButton // Verbose
-  case onTap          // Too generic
+  case login          // 不明確
+  case tapLoginButton // 冗長
+  case onTap          // 汎用的すぎ
 }
 ```
 
-### View Naming
+### Viewの命名
 
 ```swift
-✅ // Match reducer name + "View"
+✅ // Reducer名 + "View" に合わせる
 struct LoginFeatureView: View { }
 struct ProfileFeatureView: View { }
 
-✅ // Or just feature name if no ambiguity
+✅ // または曖昧でなければ機能名だけでも可
 struct LoginView: View { }
 
-❌ // Don't mix conventions
-struct LoginScreen: View { }     // Inconsistent
-struct LoginViewController: View { }  // Wrong framework
+❌ // 規則を混在させない
+struct LoginScreen: View { }     // 一貫性がない
+struct LoginViewController: View { }  // 間違ったフレームワーク
 ```
 
-### Dependency Naming
+### 依存性の命名
 
 ```swift
-✅ // Client/Manager suffix for services
+✅ // サービスには Client/Manager サフィックス
 struct APIClient { }
 struct DatabaseClient { }
 struct LocationManager { }
 
-✅ // Plural for collections/utilities
+✅ // コレクション/ユーティリティには複数形
 struct DateFormatters { }
 struct Validators { }
 
-❌ // Avoid "Service" suffix
-struct APIService { }  // Not TCA convention
+❌ // "Service" サフィックスを避ける
+struct APIService { }  // TCA の慣例ではない
 ```
 
 ---
 
-## State Design
+## State設計
 
-### Rule 1: Always Use @ObservableState
+### ルール1: 常に @ObservableState を使用
 
 ```swift
-✅ // Modern approach
+✅ // 最新のアプローチ
 @ObservableState
 struct State: Equatable {
   var name = ""
   var email = ""
 }
 
-❌ // Don't omit the macro
-struct State: Equatable {  // Loses observation benefits
+❌ // マクロを省略しない
+struct State: Equatable {  // 監視の利点を失う
   var name = ""
 }
 ```
 
-### Rule 2: Make State Equatable
+### ルール2: State を Equatable にする
 
 ```swift
-✅ // Always conform to Equatable
+✅ // 常に Equatable に準拠
 @ObservableState
 struct State: Equatable {
   var items: IdentifiedArrayOf<Item> = []
   var selection: UUID?
 }
 
-❌ // Missing Equatable breaks testing
+❌ // Equatable がないとテストが壊れる
 @ObservableState
-struct State {  // Can't use TestStore properly
+struct State {  // TestStore が適切に使えない
   var items: [Item] = []
 }
 ```
 
-### Rule 3: Use Value Types
+### ルール3: 値型を使用
 
 ```swift
-✅ // Prefer structs
+✅ // 構造体を優先
 @ObservableState
 struct State: Equatable {
   var user: User
   var settings: Settings
 }
 
-❌ // Avoid reference types in state
+❌ // State内で参照型を避ける
 @ObservableState
 struct State: Equatable {
-  var viewModel: ViewModel  // Reference type
+  var viewModel: ViewModel  // 参照型
 }
 ```
 
-### Rule 4: Use IdentifiedArray for Collections
+### ルール4: コレクションには IdentifiedArray を使用
 
 ```swift
-✅ // Use IdentifiedArray
+✅ // IdentifiedArray を使用
 @ObservableState
 struct State: Equatable {
   var items: IdentifiedArrayOf<Item> = []
@@ -248,17 +248,17 @@ struct Item: Identifiable, Equatable {
   var name: String
 }
 
-❌ // Don't use plain arrays for identified items
+❌ // 識別可能な項目に通常の配列を使わない
 @ObservableState
 struct State: Equatable {
-  var items: [Item] = []  // O(n) lookups, poor diffing
+  var items: [Item] = []  // O(n) 検索、差分計算が悪い
 }
 ```
 
-### Rule 5: Computed Properties for Derived State
+### ルール5: 派生状態には算出プロパティ
 
 ```swift
-✅ // Use computed properties
+✅ // 算出プロパティを使用
 @ObservableState
 struct State: Equatable {
   var items: [Item] = []
@@ -273,53 +273,53 @@ struct State: Equatable {
   }
 }
 
-❌ // Don't duplicate derived data
+❌ // 派生データを重複させない
 @ObservableState
 struct State: Equatable {
   var items: [Item] = []
-  var completedItems: [Item] = []  // Redundant, can desync
+  var completedItems: [Item] = []  // 冗長、同期が取れなくなる可能性
 }
 ```
 
-### Rule 6: Default Values
+### ルール6: デフォルト値を提供
 
 ```swift
-✅ // Provide default values
+✅ // デフォルト値を提供
 @ObservableState
 struct State: Equatable {
   var count = 0
   var items: IdentifiedArrayOf<Item> = []
   var isLoading = false
-  var error: String?  // nil is the default
+  var error: String?  // nil がデフォルト
 }
 
-❌ // Avoid force-unwrapping
+❌ // 強制アンラップを避ける
 @ObservableState
 struct State: Equatable {
-  var user: User  // Must be initialized
+  var user: User  // 初期化が必要
 }
 ```
 
-### Rule 7: Use @Presents for Navigation
+### ルール7: ナビゲーションには @Presents を使用
 
 ```swift
-✅ // Use @Presents macro
+✅ // @Presents マクロを使用
 @ObservableState
 struct State: Equatable {
   @Presents var destination: Destination.State?
 }
 
-❌ // Don't use @PresentationState (deprecated)
+❌ // @PresentationState を使わない（非推奨）
 @ObservableState
 struct State: Equatable {
-  @PresentationState var destination: Destination.State?  // Old API
+  @PresentationState var destination: Destination.State?  // 古いAPI
 }
 ```
 
-### Rule 8: Use @Shared for Persistence
+### ルール8: 永続化には @Shared を使用
 
 ```swift
-✅ // Use @Shared for persistent state
+✅ // 永続的な状態には @Shared を使用
 @ObservableState
 struct State: Equatable {
   @Shared(.appStorage("hasSeenOnboarding")) var hasSeenOnboarding = false
@@ -327,21 +327,21 @@ struct State: Equatable {
   var items: IdentifiedArrayOf<Item> = []
 }
 
-❌ // Don't manage persistence manually
+❌ // 永続化を手動で管理しない
 @ObservableState
 struct State: Equatable {
-  var hasSeenOnboarding = UserDefaults.standard.bool(forKey: "hasSeenOnboarding")  // Anti-pattern
+  var hasSeenOnboarding = UserDefaults.standard.bool(forKey: "hasSeenOnboarding")  // アンチパターン
 }
 ```
 
 ---
 
-## Action Design
+## Action設計
 
-### Rule 1: Organize Actions into Categories
+### ルール1: アクションをカテゴリーに整理
 
 ```swift
-✅ // Use nested enums for organization
+✅ // ネストされた列挙型で整理
 enum Action {
   case view(ViewAction)
   case `internal`(InternalAction)
@@ -365,19 +365,19 @@ enum Action {
   }
 }
 
-❌ // Don't mix all actions at top level
+❌ // すべてのアクションをトップレベルに混在させない
 enum Action {
   case onAppear
   case dataLoadResponse(Result<Data, Error>)
   case didSave(Item)
-  // Hard to maintain
+  // 保守が難しい
 }
 ```
 
-### Rule 2: Use @CasePathable
+### ルール2: @CasePathable を使用
 
 ```swift
-✅ // Add @CasePathable for pattern matching
+✅ // パターンマッチングのために @CasePathable を追加
 @CasePathable
 enum Action {
   case view(ViewAction)
@@ -389,20 +389,20 @@ enum Action {
   }
 }
 
-// Enables:
+// これが可能になる:
 await store.receive(\.delegate.didSave)
 ```
 
-### Rule 3: Response Actions
+### ルール3: レスポンスアクション
 
 ```swift
-✅ // Include Result for async responses
+✅ // 非同期レスポンスには Result を含める
 enum Action {
   case fetchDataButtonTapped
   case dataResponse(Result<Data, Error>)
 }
 
-// In reducer
+// Reducerで
 case .fetchDataButtonTapped:
   return .run { send in
     await send(.dataResponse(Result {
@@ -410,7 +410,7 @@ case .fetchDataButtonTapped:
     }))
   }
 
-❌ // Don't split success/failure
+❌ // 成功/失敗を分けない
 enum Action {
   case fetchDataButtonTapped
   case dataResponseSuccess(Data)
@@ -418,10 +418,10 @@ enum Action {
 }
 ```
 
-### Rule 4: Delegate Pattern
+### ルール4: デリゲートパターン
 
 ```swift
-✅ // Use delegate for parent communication
+✅ // 親への通信にはデリゲートを使用
 @Reducer
 struct ChildFeature {
   enum Action {
@@ -442,17 +442,17 @@ struct ChildFeature {
   }
 }
 
-❌ // Don't use closures
+❌ // クロージャを使わない
 @Reducer
 struct ChildFeature {
-  var onComplete: () -> Void  // Not testable, not serializable
+  var onComplete: () -> Void  // テストできない、シリアライズできない
 }
 ```
 
-### Rule 5: Binding Actions
+### ルール5: バインディングアクション
 
 ```swift
-✅ // Use BindingAction for two-way bindings
+✅ // 双方向バインディングには BindingAction を使用
 enum Action: BindableAction {
   case binding(BindingAction<State>)
   case view(ViewAction)
@@ -465,21 +465,21 @@ var body: some ReducerOf<Self> {
   }
 }
 
-❌ // Don't create manual binding actions
+❌ // 手動バインディングアクションを作成しない
 enum Action {
-  case nameChanged(String)      // Manual binding
-  case emailChanged(String)     // Repetitive
+  case nameChanged(String)      // 手動バインディング
+  case emailChanged(String)     // 繰り返し
 }
 ```
 
 ---
 
-## Reducer Implementation
+## Reducer実装
 
-### Rule 1: Use Reduce for State Mutations
+### ルール1: 状態変更には Reduce を使用
 
 ```swift
-✅ // Use Reduce with inout state
+✅ // inout state で Reduce を使用
 var body: some ReducerOf<Self> {
   Reduce { state, action in
     switch action {
@@ -490,49 +490,49 @@ var body: some ReducerOf<Self> {
   }
 }
 
-❌ // Don't return new state
+❌ // 新しい状態を返さない
 var body: some ReducerOf<Self> {
   Reduce { state, action in
     var newState = state
     newState.count += 1
-    state = newState  // Unnecessary
+    state = newState  // 不要
     return .none
   }
 }
 ```
 
-### Rule 2: Order Composition Correctly
+### ルール2: 合成の順序を正しく
 
 ```swift
-✅ // Correct composition order
+✅ // 正しい合成順序
 var body: some ReducerOf<Self> {
-  BindingReducer()  // First: handle bindings
+  BindingReducer()  // 最初: バインディングを処理
 
   Reduce { state, action in
-    // Second: main logic
+    // 2番目: メインロジック
   }
-  .ifLet(\.$destination, action: \.destination)  // Third: child reducers
+  .ifLet(\.$destination, action: \.destination)  // 3番目: 子Reducer
   .forEach(\.path, action: \.path)
 
-  // Fourth: side effects (analytics, logging)
+  // 4番目: 副作用（分析、ログ）
   ._printChanges()
 }
 
-❌ // Wrong order
+❌ // 間違った順序
 var body: some ReducerOf<Self> {
   Reduce { state, action in
-    // Will run before child reducers handle actions
+    // 子Reducerがアクションを処理する前に実行される
   }
   .ifLet(\.$destination, action: \.destination)
 
-  BindingReducer()  // Too late
+  BindingReducer()  // 遅すぎる
 }
 ```
 
-### Rule 3: Handle All Action Cases
+### ルール3: すべてのアクションケースを処理
 
 ```swift
-✅ // Handle all cases explicitly
+✅ // すべてのケースを明示的に処理
 Reduce { state, action in
   switch action {
   case .view(.onAppear):
@@ -542,43 +542,43 @@ Reduce { state, action in
     return .run { /* ... */ }
 
   case .delegate:
-    return .none  // Parent handles this
+    return .none  // 親が処理
 
   case .destination:
-    return .none  // Child reducer handles this
+    return .none  // 子Reducerが処理
   }
 }
 
-❌ // Don't use default
+❌ // default を使わない
 Reduce { state, action in
   switch action {
   case .view(.onAppear):
     return .run { /* ... */ }
 
-  default:  // Hides bugs
+  default:  // バグを隠す
     return .none
   }
 }
 ```
 
-### Rule 4: Return .none When No Effects
+### ルール4: エフェクトがない場合は .none を返す
 
 ```swift
-✅ // Always return an effect
+✅ // 常にエフェクトを返す
 case .incrementButtonTapped:
   state.count += 1
   return .none
 
-❌ // Don't omit return
+❌ // return を省略しない
 case .incrementButtonTapped:
   state.count += 1
-  // Missing return (compile error)
+  // return がない（コンパイルエラー）
 ```
 
-### Rule 5: Use .send() for Internal Actions
+### ルール5: 内部アクションには .send() を使用
 
 ```swift
-✅ // Use .send() for immediate actions
+✅ // 即座のアクションには .send() を使用
 case .loadData:
   state.isLoading = true
   return .merge(
@@ -589,18 +589,18 @@ case .loadData:
   )
 
 case .trackAnalytics(let event):
-  // Handle analytics
+  // 分析を処理
   return .none
 ```
 
 ---
 
-## Effect Guidelines
+## Effectガイドライン
 
-### Rule 1: Use .run for Async Effects
+### ルール1: 非同期エフェクトには .run を使用
 
 ```swift
-✅ // Modern async/await approach
+✅ // 最新の async/await アプローチ
 case .fetchDataButtonTapped:
   return .run { send in
     await send(.dataResponse(Result {
@@ -608,7 +608,7 @@ case .fetchDataButtonTapped:
     }))
   }
 
-❌ // Don't use publishers (legacy)
+❌ // パブリッシャーを使わない（レガシー）
 case .fetchDataButtonTapped:
   return .publisher {
     apiClient.fetchDataPublisher()
@@ -617,10 +617,10 @@ case .fetchDataButtonTapped:
   }
 ```
 
-### Rule 2: Capture State Values
+### ルール2: 状態の値をキャプチャ
 
 ```swift
-✅ // Capture immutable state values
+✅ // 不変の状態値をキャプチャ
 case .startTimer:
   let interval = state.timerInterval
   return .run { send in
@@ -629,19 +629,19 @@ case .startTimer:
     }
   }
 
-❌ // Don't capture entire state
+❌ // 状態全体をキャプチャしない
 case .startTimer:
-  return .run { [state] send in  // Captures mutable state
+  return .run { [state] send in  // ミュータブルな状態をキャプチャ
     for await _ in clock.timer(interval: state.timerInterval) {
       await send(.timerTicked)
     }
   }
 ```
 
-### Rule 3: Use Cancellation IDs
+### ルール3: キャンセルIDを使用
 
 ```swift
-✅ // Define cancellation IDs
+✅ // キャンセルIDを定義
 private enum CancelID {
   case timer
   case request
@@ -659,16 +659,16 @@ case .startTimer:
 case .stopTimer:
   return .cancel(id: CancelID.timer)
 
-❌ // Don't use string IDs
+❌ // 文字列IDを使わない
 case .startTimer:
   return .run { /* ... */ }
-    .cancellable(id: "timer")  // Type-unsafe
+    .cancellable(id: "timer")  // 型安全でない
 ```
 
-### Rule 4: Use cancelInFlight for Debouncing
+### ルール4: デバウンスには cancelInFlight を使用
 
 ```swift
-✅ // Debounce with cancelInFlight
+✅ // cancelInFlight でデバウンス
 case let .searchQueryChanged(query):
   state.searchQuery = query
   return .run { send in
@@ -678,10 +678,10 @@ case let .searchQueryChanged(query):
   .cancellable(id: CancelID.search, cancelInFlight: true)
 ```
 
-### Rule 5: Use .merge for Parallel Effects
+### ルール5: 並列エフェクトには .merge を使用
 
 ```swift
-✅ // Run effects in parallel
+✅ // エフェクトを並列実行
 case .onAppear:
   return .merge(
     .run { send in await send(.fetchUser) },
@@ -690,10 +690,10 @@ case .onAppear:
   )
 ```
 
-### Rule 6: Use .concatenate for Sequential Effects
+### ルール6: 順次エフェクトには .concatenate を使用
 
 ```swift
-✅ // Run effects sequentially
+✅ // エフェクトを順次実行
 case .submitForm:
   return .concatenate(
     .run { send in await send(.validateForm) },
@@ -702,10 +702,10 @@ case .submitForm:
   )
 ```
 
-### Rule 7: Handle Effect Errors
+### ルール7: エフェクトのエラーを処理
 
 ```swift
-✅ // Always wrap effects in Result
+✅ // 常にエフェクトを Result でラップ
 case .fetchDataButtonTapped:
   state.isLoading = true
   return .run { send in
@@ -724,22 +724,22 @@ case let .dataResponse(.failure(error)):
   state.error = error
   return .none
 
-❌ // Don't ignore errors
+❌ // エラーを無視しない
 case .fetchDataButtonTapped:
   return .run { send in
-    let data = try await apiClient.fetchData()  // Can crash
+    let data = try await apiClient.fetchData()  // クラッシュの可能性
     await send(.dataReceived(data))
   }
 ```
 
 ---
 
-## Dependency Management
+## 依存性管理
 
-### Rule 1: Declare Dependencies with @Dependency
+### ルール1: @Dependency で依存性を宣言
 
 ```swift
-✅ // Use @Dependency property wrapper
+✅ // @Dependency プロパティラッパーを使用
 @Reducer
 struct Feature {
   @Dependency(\.apiClient) var apiClient
@@ -747,22 +747,22 @@ struct Feature {
   @Dependency(\.uuid) var uuid
 }
 
-❌ // Don't use global singletons
+❌ // グローバルシングルトンを使わない
 @Reducer
 struct Feature {
   func reduce(into state: inout State, action: Action) -> Effect<Action> {
     case .fetch:
       return .run { send in
-        let data = try await NetworkManager.shared.fetch()  // Not testable
+        let data = try await NetworkManager.shared.fetch()  // テストできない
       }
   }
 }
 ```
 
-### Rule 2: Register Dependencies Properly
+### ルール2: 依存性を適切に登録
 
 ```swift
-✅ // Complete dependency registration
+✅ // 完全な依存性登録
 struct APIClient {
   var fetchUser: @Sendable (UUID) async throws -> User
   var updateProfile: @Sendable (User) async throws -> Void
@@ -771,10 +771,10 @@ struct APIClient {
 extension APIClient: DependencyKey {
   static let liveValue = APIClient(
     fetchUser: { id in
-      // Live implementation
+      // 本番実装
     },
     updateProfile: { user in
-      // Live implementation
+      // 本番実装
     }
   )
 }
@@ -787,24 +787,24 @@ extension DependencyValues {
 }
 ```
 
-### Rule 3: Use @Sendable for Closures
+### ルール3: クロージャには @Sendable を使用
 
 ```swift
-✅ // Mark closures as @Sendable
+✅ // クロージャを @Sendable としてマーク
 struct APIClient {
   var fetch: @Sendable () async throws -> Data
 }
 
-❌ // Missing @Sendable
+❌ // @Sendable がない
 struct APIClient {
-  var fetch: () async throws -> Data  // Concurrency warning
+  var fetch: () async throws -> Data  // 並行性警告
 }
 ```
 
-### Rule 4: Test Dependencies
+### ルール4: テスト用依存性
 
 ```swift
-✅ // Provide test values
+✅ // テスト値を提供
 extension APIClient {
   static let testValue = APIClient(
     fetchUser: { _ in
@@ -816,7 +816,7 @@ extension APIClient {
   )
 }
 
-// In tests
+// テストで
 let store = TestStore(initialState: Feature.State()) {
   Feature()
 } withDependencies: {
@@ -826,12 +826,12 @@ let store = TestStore(initialState: Feature.State()) {
 
 ---
 
-## Testing Requirements
+## テスト要件
 
-### Rule 1: Test All State Changes
+### ルール1: すべての状態変更をテスト
 
 ```swift
-✅ // Assert every state change
+✅ // すべての状態変更をアサート
 @Test
 func testIncrement() async {
   let store = TestStore(initialState: Feature.State()) {
@@ -847,21 +847,21 @@ func testIncrement() async {
   }
 }
 
-❌ // Don't skip assertions
+❌ // アサーションをスキップしない
 @Test
 func testIncrement() async {
   let store = TestStore(initialState: Feature.State()) {
     Feature()
   }
 
-  await store.send(.incrementButtonTapped)  // No assertion
+  await store.send(.incrementButtonTapped)  // アサーションなし
 }
 ```
 
-### Rule 2: Test All Received Actions
+### ルール2: 受信したすべてのアクションをテスト
 
 ```swift
-✅ // Assert received actions from effects
+✅ // エフェクトから受信したアクションをアサート
 @Test
 func testFetch() async {
   let store = TestStore(initialState: Feature.State()) {
@@ -880,7 +880,7 @@ func testFetch() async {
   }
 }
 
-❌ // Don't ignore received actions
+❌ // 受信アクションを無視しない
 @Test
 func testFetch() async {
   let store = TestStore(initialState: Feature.State()) {
@@ -888,14 +888,14 @@ func testFetch() async {
   }
 
   await store.send(.fetchButtonTapped)
-  // Missing: await store.receive(\.dataResponse)
+  // 欠落: await store.receive(\.dataResponse)
 }
 ```
 
-### Rule 3: Call store.finish()
+### ルール3: store.finish() を呼び出す
 
 ```swift
-✅ // Ensure all effects complete
+✅ // すべてのエフェクトが完了したことを保証
 @Test
 func testTimer() async {
   let clock = TestClock()
@@ -910,14 +910,14 @@ func testTimer() async {
   await store.receive(\.timerTicked)
 
   await store.send(.stopTimer)
-  await store.finish()  // Ensures timer cancelled
+  await store.finish()  // タイマーがキャンセルされたことを保証
 }
 ```
 
-### Rule 4: Use TestClock for Time-Based Effects
+### ルール4: 時間ベースのエフェクトには TestClock を使用
 
 ```swift
-✅ // Control time in tests
+✅ // テストで時間を制御
 @Test
 func testDebounce() async {
   let clock = TestClock()
@@ -938,10 +938,10 @@ func testDebounce() async {
 }
 ```
 
-### Rule 5: Use Non-Exhaustive for Integration Tests
+### ルール5: 統合テストには非網羅的モードを使用
 
 ```swift
-✅ // Integration tests can be non-exhaustive
+✅ // 統合テストは非網羅的でも可
 @Test
 func testLoginFlow() async {
   let store = TestStore(initialState: AppFeature.State()) {
@@ -959,44 +959,44 @@ func testLoginFlow() async {
 
 ---
 
-## SwiftUI Integration
+## SwiftUI統合
 
-### Rule 1: Direct Store Access (No ViewStore)
+### ルール1: 直接Storeアクセス（ViewStore不要）
 
 ```swift
-✅ // Modern approach with @ObservableState
+✅ // @ObservableState での最新アプローチ
 struct FeatureView: View {
   let store: StoreOf<Feature>
 
   var body: some View {
-    Text("Count: \(store.count)")
-    Button("Increment") {
+    Text("カウント: \(store.count)")
+    Button("増加") {
       store.send(.incrementButtonTapped)
     }
   }
 }
 
-❌ // Don't use ViewStore
+❌ // ViewStore を使わない
 struct FeatureView: View {
   let store: StoreOf<Feature>
 
   var body: some View {
-    WithViewStore(store, observe: { $0 }) { viewStore in  // Legacy
-      Text("Count: \(viewStore.count)")
+    WithViewStore(store, observe: { $0 }) { viewStore in  // レガシー
+      Text("カウント: \(viewStore.count)")
     }
   }
 }
 ```
 
-### Rule 2: Use @Bindable for Bindings
+### ルール2: バインディングには @Bindable を使用
 
 ```swift
-✅ // Use @Bindable for navigation/bindings
+✅ // ナビゲーション/バインディングには @Bindable を使用
 struct FeatureView: View {
   @Bindable var store: StoreOf<Feature>
 
   var body: some View {
-    TextField("Name", text: $store.name)
+    TextField("名前", text: $store.name)
       .sheet(item: $store.scope(state: \.destination?.add, action: \.destination.add)) { store in
         AddView(store: store)
       }
@@ -1004,10 +1004,10 @@ struct FeatureView: View {
 }
 ```
 
-### Rule 3: Scope Stores in Views
+### ルール3: Viewで Store をスコープ
 
 ```swift
-✅ // Scope to child features
+✅ // 子機能にスコープ
 struct ParentView: View {
   let store: StoreOf<ParentFeature>
 
@@ -1020,27 +1020,27 @@ struct ParentView: View {
   }
 }
 
-❌ // Don't pass parent store to children
+❌ // 親Storeを子に渡さない
 struct ParentView: View {
   let store: StoreOf<ParentFeature>
 
   var body: some View {
-    ChildView(store: store)  // Wrong scope
+    ChildView(store: store)  // 間違ったスコープ
   }
 }
 ```
 
-### Rule 4: Use @ViewAction for Type Safety
+### ルール4: 型安全性のために @ViewAction を使用
 
 ```swift
-✅ // Use @ViewAction macro
+✅ // @ViewAction マクロを使用
 @ViewAction(for: Feature.self)
 struct FeatureView: View {
   let store: StoreOf<Feature>
 
   var body: some View {
-    Button("Save") {
-      send(.saveButtonTapped)  // Wrapped in .view()
+    Button("保存") {
+      send(.saveButtonTapped)  // .view() でラップされる
     }
   }
 }
@@ -1048,12 +1048,12 @@ struct FeatureView: View {
 
 ---
 
-## Code Style
+## コードスタイル
 
-### Rule 1: Use MARK Comments
+### ルール1: MARK コメントを使用
 
 ```swift
-✅ // Organize with MARK
+✅ // MARK で整理
 @Reducer
 struct Feature {
   // MARK: - State
@@ -1075,12 +1075,12 @@ struct Feature {
 }
 ```
 
-### Rule 2: Access Control
+### ルール2: アクセス制御
 
 ```swift
-✅ // Use appropriate access levels
+✅ // 適切なアクセスレベルを使用
 @Reducer
-public struct Feature {  // Public if in module
+public struct Feature {  // モジュール内ならpublic
   @ObservableState
   public struct State: Equatable {  // Public
     public var count = 0  // Public state
@@ -1089,7 +1089,7 @@ public struct Feature {  // Public if in module
 
   public enum Action {  // Public
     case view(ViewAction)
-    case _internal(InternalAction)  // Prefix with underscore
+    case _internal(InternalAction)  // アンダースコアのプレフィックス
 
     public enum ViewAction { }
     enum InternalAction { }  // Internal
@@ -1097,32 +1097,32 @@ public struct Feature {  // Public if in module
 }
 ```
 
-### Rule 3: Documentation
+### ルール3: ドキュメント
 
 ```swift
-✅ // Document public APIs
-/// Manages user authentication and session state.
+✅ // Public APIをドキュメント化
+/// ユーザー認証とセッション状態を管理します。
 ///
-/// This feature handles login, logout, and session persistence
-/// using the `@Shared` property wrapper for state synchronization.
+/// この機能は、`@Shared` プロパティラッパーを使用して
+/// ログイン、ログアウト、セッション永続化を処理します。
 @Reducer
 public struct AuthenticationFeature {
-  /// The current authentication state.
+  /// 現在の認証状態。
   @ObservableState
   public struct State: Equatable {
-    /// Whether a user is currently logged in.
+    /// ユーザーが現在ログインしているかどうか。
     public var isAuthenticated = false
 
-    /// The currently logged-in user, if any.
+    /// 現在ログインしているユーザー（存在する場合）。
     public var currentUser: User?
   }
 }
 ```
 
-### Rule 4: Line Length
+### ルール4: 行の長さ
 
 ```swift
-✅ // Keep lines under 100 characters
+✅ // 行を100文字以内に保つ
 return .run { send in
   await send(
     .dataResponse(
@@ -1131,14 +1131,14 @@ return .run { send in
   )
 }
 
-❌ // Don't write long lines
+❌ // 長い行を書かない
 return .run { send in await send(.dataResponse(Result { try await apiClient.fetchData() })) }
 ```
 
-### Rule 5: Trailing Closures
+### ルール5: トレーリングクロージャ
 
 ```swift
-✅ // Use trailing closure syntax
+✅ // トレーリングクロージャ構文を使用
 let store = Store(initialState: Feature.State()) {
   Feature()
 }
@@ -1147,7 +1147,7 @@ let store = Store(initialState: Feature.State()) {
   await send(.action)
 }
 
-❌ // Don't use explicit closure parameter
+❌ // 明示的なクロージャパラメータを使わない
 let store = Store(initialState: Feature.State(), reducer: {
   Feature()
 })
@@ -1155,61 +1155,61 @@ let store = Store(initialState: Feature.State(), reducer: {
 
 ---
 
-## Common Mistakes
+## よくある間違い
 
-### ❌ Mutating State Outside Reducers
+### ❌ Reducer外で状態を変更
 
 ```swift
-// WRONG
+// 間違い
 struct FeatureView: View {
   let store: StoreOf<Feature>
 
   var body: some View {
-    Button("Bad") {
-      store.state.count += 1  // Compile error
+    Button("悪い") {
+      store.state.count += 1  // コンパイルエラー
     }
   }
 }
 ```
 
-### ❌ Calling send() from Effects
+### ❌ エフェクトから send() を呼び出す
 
 ```swift
-// WRONG
+// 間違い
 case .action:
-  return .run { [store] _ in  // Don't capture store
+  return .run { [store] _ in  // Store をキャプチャしない
     try await clock.sleep(for: .seconds(1))
-    store.send(.anotherAction)  // Wrong!
+    store.send(.anotherAction)  // 間違い！
   }
 
-// CORRECT
+// 正しい
 case .action:
   return .run { send in
     try await clock.sleep(for: .seconds(1))
-    await send(.anotherAction)  // Use the send parameter
+    await send(.anotherAction)  // send パラメータを使用
   }
 ```
 
-### ❌ Using Global State
+### ❌ グローバル状態を使用
 
 ```swift
-// WRONG
+// 間違い
 class GlobalState {
   static let shared = GlobalState()
   var isLoggedIn = false
 }
 
-// CORRECT - Use @Shared
+// 正しい - @Shared を使用
 @ObservableState
 struct State {
   @Shared(.appStorage("isLoggedIn")) var isLoggedIn = false
 }
 ```
 
-### ❌ Ignoring Test Failures
+### ❌ テストの失敗を無視
 
 ```swift
-// WRONG
+// 間違い
 @Test
 func test() async {
   let store = TestStore(initialState: Feature.State()) {
@@ -1217,10 +1217,10 @@ func test() async {
   }
 
   await store.send(.action)
-  // Ignoring: "Expected state to change but it didn't"
+  // 無視: "状態が変更されることを期待しましたが、変更されませんでした"
 }
 
-// CORRECT
+// 正しい
 @Test
 func test() async {
   let store = TestStore(initialState: Feature.State()) {
@@ -1228,35 +1228,35 @@ func test() async {
   }
 
   await store.send(.action) {
-    $0.count = 1  // Assert the change
+    $0.count = 1  // 変更をアサート
   }
 }
 ```
 
 ---
 
-## Checklist
+## チェックリスト
 
-Before submitting code, verify:
+コードを提出する前に確認:
 
-- [ ] All `State` types have `@ObservableState` and `Equatable`
-- [ ] All `Action` enums are organized into categories
-- [ ] All effects use `.run` with `@Sendable` closures
-- [ ] All dependencies use `@Dependency` property wrapper
-- [ ] All tests assert state changes and received actions
-- [ ] All tests call `store.finish()`
-- [ ] No `ViewStore` usage (use direct store access)
-- [ ] Navigation uses `@Presents` (not `@PresentationState`)
-- [ ] Collections use `IdentifiedArray` where appropriate
-- [ ] No force-unwrapping or implicitly unwrapped optionals
-- [ ] Code compiles with strict concurrency enabled
-- [ ] Documentation for public APIs
+- [ ] すべての `State` 型に `@ObservableState` と `Equatable` がある
+- [ ] すべての `Action` 列挙型がカテゴリーに整理されている
+- [ ] すべてのエフェクトが `@Sendable` クロージャで `.run` を使用
+- [ ] すべての依存性が `@Dependency` プロパティラッパーを使用
+- [ ] すべてのテストが状態変更と受信アクションをアサート
+- [ ] すべてのテストが `store.finish()` を呼び出す
+- [ ] `ViewStore` の使用がない（直接Store アクセスを使用）
+- [ ] ナビゲーションが `@Presents` を使用（`@PresentationState` ではない）
+- [ ] コレクションが適切な場所で `IdentifiedArray` を使用
+- [ ] 強制アンラップや暗黙的アンラップオプショナルがない
+- [ ] strict concurrency を有効にしてコンパイル
+- [ ] Public API のドキュメント
 
 ---
 
-## Resources
+## リソース
 
-- [TCA Documentation](https://swiftpackageindex.com/pointfreeco/swift-composable-architecture/main/documentation/composablearchitecture)
-- [Point-Free Episodes](https://www.pointfree.co/collections/composable-architecture)
-- [Migration Guides](https://github.com/pointfreeco/swift-composable-architecture/tree/main/Sources/ComposableArchitecture/Documentation.docc/Articles/MigrationGuides)
-- [Swift Style Guide](https://google.github.io/swift/)
+- [TCAドキュメント](https://swiftpackageindex.com/pointfreeco/swift-composable-architecture/main/documentation/composablearchitecture)
+- [Point-Freeエピソード](https://www.pointfree.co/collections/composable-architecture)
+- [マイグレーションガイド](https://github.com/pointfreeco/swift-composable-architecture/tree/main/Sources/ComposableArchitecture/Documentation.docc/Articles/MigrationGuides)
+- [Swift スタイルガイド](https://google.github.io/swift/)
